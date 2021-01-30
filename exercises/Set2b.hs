@@ -134,7 +134,7 @@ smallestDivisor n = head (filter (\k -> n `mod` k == 0) [2..n])
 isPrime :: Integer -> Bool
 isPrime 0 = False
 isPrime 1 = False
-isPrime n = d `elem` [1, n] where d = smallestDivisor n
+isPrime n = smallestDivisor n == n
 
 ------------------------------------------------------------------------------
 -- Ex 8: implement a function biggestPrimeAtMost that returns the
