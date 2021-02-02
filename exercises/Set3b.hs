@@ -54,7 +54,7 @@ getSum :: Int -> Int -> Int -> Int
 getSum sum i k = if i == k then sum+i else getSum (sum+i) (i+1) k
 
 sumsHelper :: Int -> Int -> [Int] -> [Int]
-sumsHelper i k res = if k == 0 then res else sumsHelper i (k-1) ((getSum 0 1 k):res)
+sumsHelper i k res = if k == 0 then res else sumsHelper i (k-1) (getSum 0 1 k:res)
 
 sums :: Int -> [Int]
 sums i = sumsHelper i i []
@@ -107,7 +107,7 @@ indexDefault (x:xs) i def = indexDefault xs (i-1) def
 sorted :: [Int] -> Bool
 sorted [] = True
 sorted [x] = True
-sorted (x:y:xs) = if x > y then False else sorted (y:xs)
+sorted (x:y:xs) = x <= y && sorted (y:xs)
 
 ------------------------------------------------------------------------------
 -- Ex 6: compute the partial sums of the given list like this:
@@ -136,9 +136,9 @@ sumsOf (x:y:xs) = x:sumsOf (x+y:xs)
 merge :: [Int] -> [Int] -> [Int]
 merge [] ys = ys
 merge xs [] = xs
-merge [x] (y:ys) = if x <= y then x:y:ys else y:(merge [x] ys) 
-merge (x:xs) [y] = if y <= x then y:x:xs else x:(merge xs [y])
-merge (x:xs) (y:ys) = if x <= y then x:(merge xs (y:ys)) else y:(merge (x:xs) ys)
+merge [x] (y:ys) = if x <= y then x:y:ys else y:merge [x] ys
+merge (x:xs) [y] = if y <= x then y:x:xs else x:merge xs [y]
+merge (x:xs) (y:ys) = if x <= y then x:merge xs (y:ys) else y:merge (x:xs) ys
 
 ------------------------------------------------------------------------------
 -- Ex 8: define the function mymaximum that takes a list and a
@@ -158,8 +158,8 @@ merge (x:xs) (y:ys) = if x <= y then x:(merge xs (y:ys)) else y:(merge (x:xs) ys
 
 mymaximum :: (a -> a -> Bool) -> a -> [a] -> a
 mymaximum bigger initial [] = initial
-mymaximum bigger initial (x:xs) = if bigger initial x 
-                                  then mymaximum bigger initial xs 
+mymaximum bigger initial (x:xs) = if bigger initial x
+                                  then mymaximum bigger initial xs
                                   else mymaximum bigger x xs
 ------------------------------------------------------------------------------
 -- Ex 9: define a version of map that takes a two-argument function
