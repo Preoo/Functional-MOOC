@@ -25,7 +25,11 @@ import Mooc.Todo
 -- Otherwise return "Ok."
 
 workload :: Int -> Int -> String
-workload nExercises hoursPerExercise = todo
+workload nExercises hoursPerExercise
+  | hoursTotal > 100 = "Holy moly!"
+  | hoursTotal < 10 = "Piece of cake!"
+  | otherwise = "Ok."
+  where hoursTotal = nExercises * hoursPerExercise
 
 ------------------------------------------------------------------------------
 -- Ex 2: Implement the function echo that builds a string like this:
@@ -38,7 +42,8 @@ workload nExercises hoursPerExercise = todo
 -- Hint: use recursion
 
 echo :: String -> String
-echo = todo
+echo "" = ""
+echo s = s ++ ", " ++ echo (tail s)
 
 ------------------------------------------------------------------------------
 -- Ex 3: A country issues some banknotes. The banknotes have a serial
@@ -51,7 +56,9 @@ echo = todo
 -- are valid.
 
 countValid :: [String] -> Int
-countValid = todo
+countValid = length . filter validBankNotes
+  where validBankNotes serial = serial !! 2 == serial !! 4
+                             || serial !! 3 == serial !! 5
 
 ------------------------------------------------------------------------------
 -- Ex 4: Find the first element that repeats two or more times _in a
@@ -63,7 +70,9 @@ countValid = todo
 --   repeated [1,2,1,2,3,3] ==> Just 3
 
 repeated :: Eq a => [a] -> Maybe a
-repeated = todo
+repeated []  = Nothing
+repeated [_] = Nothing
+repeated (x:rest) = if x == head rest then Just x else repeated rest
 
 ------------------------------------------------------------------------------
 -- Ex 5: A laboratory has been collecting measurements. Some of the
@@ -85,7 +94,8 @@ repeated = todo
 --     ==> Left "no data"
 
 sumSuccess :: [Either String Int] -> Either String Int
-sumSuccess = todo
+sumSuccess m = case [a | Right a <- m] of [] -> Left "no data"
+                                          s  -> Right $ sum s
 
 ------------------------------------------------------------------------------
 -- Ex 6: A combination lock can either be open or closed. The lock
@@ -107,30 +117,36 @@ sumSuccess = todo
 --   isOpen (open "0000" (lock (changeCode "0000" (open "1234" aLock)))) ==> True
 --   isOpen (open "1234" (lock (changeCode "0000" (open "1234" aLock)))) ==> False
 
-data Lock = LockUndefined
+data Lock = UnLocked String | Locked String
   deriving Show
 
 -- aLock should be a locked lock with the code "1234"
 aLock :: Lock
-aLock = todo
+aLock = Locked "1234"
 
 -- isOpen returns True if the lock is open
 isOpen :: Lock -> Bool
-isOpen = todo
+isOpen (UnLocked _) = True
+isOpen (Locked _)   = False
 
 -- open tries to open the lock with the given code. If the code is
 -- wrong, nothing happens.
 open :: String -> Lock -> Lock
-open = todo
+open _ (UnLocked pw) = UnLocked pw
+open pwd (Locked pw) | pwd == pw = UnLocked pw 
+                     | otherwise = Locked pw
+
 
 -- lock closes a lock. If the lock is already closed, nothing happens.
 lock :: Lock -> Lock
-lock = todo
+lock (Locked pw)   = Locked pw
+lock (UnLocked pw) = Locked pw
 
 -- changeCode changes the code of an open lock. If the lock is closed,
 -- nothing happens.
 changeCode :: String -> Lock -> Lock
-changeCode = todo
+changeCode new_pw (Locked pw)   = Locked pw
+changeCode new_pw (UnLocked pw) = UnLocked new_pw
 
 ------------------------------------------------------------------------------
 -- Ex 7: Here's a type Text that just wraps a String. Implement an Eq
@@ -146,6 +162,9 @@ changeCode = todo
 data Text = Text String
   deriving Show
 
+instance Eq Text where
+  (==) (Text t1) (Text t2) = filter trim t1 == filter trim t2
+    where trim t = t `notElem` " \n"
 
 ------------------------------------------------------------------------------
 -- Ex 8: We can represent functions or mappings as lists of pairs.
@@ -175,7 +194,17 @@ data Text = Text String
 --       ==> [("a",1),("b",2)]
 
 compose :: (Eq a, Eq b) => [(a,b)] -> [(b,c)] -> [(a,c)]
-compose = todo
+compose f t = [(aa, fromJust' cc) | (aa,bb) <- f, let cc = lookup bb t, isJust' cc]
+
+-- These functions should really be imported by default so students don't have to 
+-- constantly reimplement basic std function like isJust, fromJust etc in each set
+-- unless this is intended as learning exercise.
+fromJust' :: Maybe a -> a
+fromJust' (Just n) = n
+
+isJust' :: Maybe a -> Bool
+isJust' Nothing  = False
+isJust' (Just _) = True
 
 ------------------------------------------------------------------------------
 -- Ex 9: Reorder a list using an [(Int,Int)] mapping.
@@ -211,6 +240,7 @@ compose = todo
 --     ==> [3,5,9]
 
 type Permutation = [(Int,Int)]
-
+-- sort permutations [(from,to)] based on 'to' then map over sorted permutations
+-- to create a list of values from orignal list based on 'from' index.
 permute :: Permutation -> [a] -> [a]
-permute = todo
+permute ps as = [as !! i | (i, _) <- sortOn snd ps]

@@ -47,10 +47,10 @@ type Col   = Int
 type Coord = (Row, Col)
 
 nextRow :: Coord -> Coord
-nextRow (i,j) = todo
+nextRow (i,j) = (i+1, 1)
 
 nextCol :: Coord -> Coord
-nextCol (i,j) = todo
+nextCol (i,j) = (i, j+1)
 
 --------------------------------------------------------------------------------
 -- Ex 2: Implement the function prettyPrint that, given the size of the
@@ -98,8 +98,15 @@ nextCol (i,j) = todo
 -- of the width (or height) n of the chess board; the naïve solution with elem
 -- takes O(n^3) time. Just ignore the previous sentence, if you're not familiar
 -- with the O-notation.)
+
+-- naïve approach
 prettyPrint :: Size -> [Coord] -> String
-prettyPrint = todo
+prettyPrint n q = pretty' 1 1 n q "" where
+    pretty' r c n q out | r == n+1  = out
+                        | c == n+1  = pretty' (r+1) 1 n q (out ++ "\n")
+                        | otherwise = pretty' r (c+1) n q (out ++ if (r,c) `elem` q 
+                                                                  then "Q" 
+                                                                  else ".")
 
 --------------------------------------------------------------------------------
 -- Ex 3: The task in this exercise is to define the relations sameRow, sameCol,
@@ -123,16 +130,24 @@ prettyPrint = todo
 --   sameAntidiag (500,5) (5,500) ==> True
 
 sameRow :: Coord -> Coord -> Bool
-sameRow (i,j) (k,l) = todo
+sameRow (i,_) (k,_) = i == k
 
 sameCol :: Coord -> Coord -> Bool
-sameCol (i,j) (k,l) = todo
+sameCol (_,j) (_,l) = j == l
 
+-- assumptions that tables are NxN matrices so slope rule applies
+-- slope = abs(y2-y1)/abs(x2-x1), is diag when slope == 1 which is 45°
 sameDiag :: Coord -> Coord -> Bool
-sameDiag (i,j) (k,l) = todo
+sameDiag (i,j) (k,l) 
+    | k /= i && (l-j) `quotRem` (k-i) == (1,0) = True
+    | (i,j) == (k,l) = True
+    | otherwise = False
 
 sameAntidiag :: Coord -> Coord -> Bool
-sameAntidiag (i,j) (k,l) = todo
+sameAntidiag (i,j) (k,l)
+    | k /= i && (l-j) `quotRem` (k-i) == (-1,0) = True
+    | (i,j) == (k,l) = True
+    | otherwise = False
 
 --------------------------------------------------------------------------------
 -- Ex 4: In chess, a queen may capture another piece in the same row, column,
@@ -188,7 +203,13 @@ type Candidate = Coord
 type Stack     = [Coord]
 
 danger :: Candidate -> Stack -> Bool
-danger = todo
+danger _ [] = False
+danger princess queens = foldr isindanger False queens where
+    isindanger q hit = hit || indanger q
+    indanger q =  sameRow      princess q
+               || sameCol      princess q
+               || sameDiag     princess q
+               || sameAntidiag princess q
 
 --------------------------------------------------------------------------------
 -- Ex 5: In this exercise, the task is to write a modified version of
@@ -223,7 +244,14 @@ danger = todo
 -- solution to this version. Any working solution is okay in this exercise.)
 
 prettyPrint2 :: Size -> Stack -> String
-prettyPrint2 = todo
+prettyPrint2 n q = pretty' 1 1 n q "" where
+    pretty' r c n q out | r == n+1  = out
+                        | c == n+1  = pretty' (r+1) 1 n q (out ++ "\n")
+                        | otherwise = pretty' r (c+1) n q (out ++ if (r,c) `elem` q 
+                                                                  then "Q" 
+                                                                  else if danger (r,c) q
+                                                                       then "#"
+                                                                       else ".")
 
 --------------------------------------------------------------------------------
 -- Ex 6: Now that we can check if a piece can be safely placed into a square in
@@ -264,7 +292,10 @@ prettyPrint2 = todo
 --     Q#######
 
 fixFirst :: Size -> Stack -> Maybe Stack
-fixFirst n s = todo
+fixFirst n (q:s) = go n q s where
+    go n q s | snd q > n  = Nothing
+             | danger q s = go n (nextCol q) s
+             | otherwise  = Just (q:s)
 
 --------------------------------------------------------------------------------
 -- Ex 7: We need two helper functions for stack management.
@@ -286,10 +317,11 @@ fixFirst n s = todo
 -- Hint: Remember nextRow and nextCol? Use them!
 
 continue :: Stack -> Stack
-continue s = todo
+continue s = nextRow (head s) : s
 
 backtrack :: Stack -> Stack
-backtrack s = todo
+backtrack [s] = []
+backtrack (p:q:s) = nextCol q : s
 
 --------------------------------------------------------------------------------
 -- Ex 8: Let's take a step. Our algorithm solves the problem (in a
@@ -357,7 +389,8 @@ backtrack s = todo
 --     step 8 [(4,7),(7,5),(6,2),(8,1)] ==> [(5,1),(4,7),(7,5),(6,2),(8,1)]
 
 step :: Size -> Stack -> Stack
-step = todo
+step n s = case fixFirst n s of Nothing -> backtrack s
+                                Just s  -> continue  s
 
 --------------------------------------------------------------------------------
 -- Ex 9: Let's solve our puzzle! The function finish takes a partial
@@ -366,13 +399,14 @@ step = todo
 --
 -- Reminder: a complete solution has n queens that don't threaten each
 -- other. One easy way to know you have a valid solution is when step
--- adds the (n+1)th queen.
+-- adds the (n+1)th queen. Note: a solution exists for all n queens in nxn board.
 --
 -- After this, it's just a matter of calling `finish n [(1,1)]` to
 -- solve the n queens problem.
 
 finish :: Size -> Stack -> Stack
-finish = todo
+finish n s | length s > n = tail s --(n+1)th queen on top is unneeded
+           | otherwise    = finish n $ step n s
 
 solve :: Size -> Stack
 solve n = finish n [(1,1)]
