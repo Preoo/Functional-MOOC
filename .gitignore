@@ -2,3 +2,8 @@
 *.lock
 .stack-work
 score.json
+*.html
+style.css
+CONTRIBUTING.md
+img
+
