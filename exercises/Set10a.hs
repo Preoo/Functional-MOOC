@@ -74,10 +74,12 @@ deal players cards = zip cards (cycle players)
 --   averages [3,2,1] ==> [3.0,2.5,2.0]
 --   take 10 (averages [1..]) ==> [1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5]
 
-
-
 averages :: [Double] -> [Double]
-averages = todo
+averages []     = []
+averages [x]    = [x]
+averages (x:xs) = x : averages' x 1 xs
+    where averages' s n [x] = [(s+x)/(n+1)]
+          averages' s n (x:xs) = (s+x)/(n+1) : averages' (s+x) (n+1) xs
 
 ------------------------------------------------------------------------------
 -- Ex 5: Given two lists, xs and ys, and an element z, generate an
@@ -107,7 +109,7 @@ alternate xs ys z = xs ++ [z] ++ ys ++ [z] ++ alternate xs ys z
 --   lengthAtLeast 10 [0..]  ==> True
 
 lengthAtLeast :: Int -> [a] -> Bool
-lengthAtLeast k l = length (take k l) == k
+lengthAtLeast n xs = length (take n xs) == n
 
 ------------------------------------------------------------------------------
 -- Ex 7: The function chunks should take in a list, and a number n,
