@@ -19,5 +19,8 @@ Files for MOOC.git course material are cloned into haskell-mooc directory from r
 Get latest material with (in master branch) `git merge upstream/master`.
 Modified files are pushed into this repo `origin` and pushing to upstream is disabled to prevent uninteded changes.
 To work on this material, goto haskell-mooc/exercises directory and follow instructions
-from course page and other material. 
+from course page and other material.
+
+## Notes
+When in doubt, delete /root/.stack/ directory and reinstall ghc as per instruction in part 1.
 
