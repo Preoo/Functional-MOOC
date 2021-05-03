@@ -147,8 +147,14 @@ mkCounter = do state <- newIORef 0
 --   ["module Set11b where","","import Control.Monad"]
 
 hFetchLines :: Handle -> IO [String]
-hFetchLines h = do content <- hGetContents h
-                   return (lines content)
+-- worked until commit b7aaa1b in upstream, throws delayed read error after
+-- looks hella elegant tho :/
+-- hFetchLines h = lines <$> hGetContents h
+hFetchLines h = do stop <- hIsEOF h
+                   if stop then do return []
+                   else do line <- hGetLine h
+                           rest <- hFetchLines h
+                           return $ line:rest
 
 ------------------------------------------------------------------------------
 -- Ex 7: Given a Handle and a list of line indexes, produce the lines
@@ -162,7 +168,7 @@ hFetchLines h = do content <- hGetContents h
 
 hSelectLines :: Handle -> [Int] -> IO [String]
 hSelectLines h nums = do lines <- hFetchLines h
-                         return (map (\n -> lines !! (n-1)) nums)
+                         return $! map (\n -> lines !! (n-1)) nums
 
 ------------------------------------------------------------------------------
 -- Ex 8: In this exercise we see how a program can be split into a
