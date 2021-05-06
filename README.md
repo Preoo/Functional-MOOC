@@ -22,5 +22,7 @@ To work on this material, goto haskell-mooc/exercises directory and follow instr
 from course page and other material.
 
 ## Notes
-When in doubt, delete /root/.stack/ directory and reinstall ghc as per instruction in part 1.
+When in doubt, delete /root/.stack/ directory, run `stack purge` and reinstall ghc with `stack build`.
+With Docker environment root is in /root/ instead of ./ so double chekc before deleting anything.
+When developing using containers and VSCode with Haskell plugin, using imports will most likely show some errors.
 
