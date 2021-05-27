@@ -147,6 +147,7 @@ mkCounter = do state <- newIORef 0
 --   ["module Set11b where","","import Control.Monad"]
 
 hFetchLines :: Handle -> IO [String]
+-- commit 8f6a8d3 fix commented impl to work for this case (6) but not case 7
 -- worked until commit b7aaa1b in upstream, throws delayed read error after
 -- looks hella elegant tho :/
 -- hFetchLines h = lines <$> hGetContents h
