@@ -17,7 +17,7 @@ import Text.Read (readMaybe)
 --  sumTwoMaybes Nothing Nothing    ==> Nothing
 
 sumTwoMaybes :: Maybe Int -> Maybe Int -> Maybe Int
-sumTwoMaybes = todo
+sumTwoMaybes = liftA2 (+)
 
 ------------------------------------------------------------------------------
 -- Ex 2: Given two lists of words, xs and ys, generate all statements
@@ -36,7 +36,8 @@ sumTwoMaybes = todo
 --         "code is not suffering","code is not life"]
 
 statements :: [String] -> [String] -> [String]
-statements = todo
+statements xs ys = say <$> xs <*> [" is ", " is not "] <*> ys
+  where say x w y = x ++ w ++ y
 
 ------------------------------------------------------------------------------
 -- Ex 3: A simple calculator with error handling. Given an operation
@@ -51,10 +52,13 @@ statements = todo
 --  calculator "negate" "3"   ==> Just (-3)
 --  calculator "double" "7"   ==> Just 14
 --  calculator "doubl" "7"    ==> Nothing
---  calculator "double" "7x"  ==> Nothing
+--  calculator "double" "7x"  ==> 
 
 calculator :: String -> String -> Maybe Int
-calculator = todo
+calculator op x = parseOp op <*> readMaybe x
+  where parseOp s | s == "negate" = Just negate
+                  | s == "double" = Just (* 2)
+                  | otherwise     = Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 4: Safe division. Implement the function validateDiv that
@@ -71,7 +75,9 @@ calculator = todo
 --  validateDiv 0 3 ==> Ok 0
 
 validateDiv :: Int -> Int -> Validation Int
-validateDiv = todo
+validateDiv x y = liftA2 div divident divisor
+  where divident = pure x
+        divisor  = check (y /= 0) "Division by zero!" y
 
 ------------------------------------------------------------------------------
 -- Ex 5: Validating street addresses. A street address consists of a
@@ -101,7 +107,14 @@ data Address = Address String String String
   deriving (Show,Eq)
 
 validateAddress :: String -> String -> String -> Validation Address
-validateAddress streetName streetNumber postCode = todo
+validateAddress streetName streetNumber postCode =
+  Address <$> validStreetName streetName
+          <*> validStreetNumber streetNumber
+          <*> validPostCode postCode
+  where validStreetName n   = check (length n <= 20) "Invalid street name" n
+        validStreetNumber m = check (all isDigit m) "Invalid street number" m
+        validPostCode c     = check (checkPostCode c) "Invalid postcode" c
+        checkPostCode c'    = length c' == 5 && all isDigit c'
 
 ------------------------------------------------------------------------------
 -- Ex 6: Given the names, ages and employment statuses of two
@@ -123,7 +136,10 @@ data Person = Person String Int Bool
 twoPersons :: Applicative f =>
   f String -> f Int -> f Bool -> f String -> f Int -> f Bool
   -> f [Person]
-twoPersons name1 age1 employed1 name2 age2 employed2 = todo
+twoPersons name1 age1 employed1 name2 age2 employed2 =
+  liftA2 (\p1 p2 -> [p1, p2]) person1 person2
+    where person1 = Person <$> name1 <*> age1 <*> employed1
+          person2 = Person <$> name2 <*> age2 <*> employed2
 
 ------------------------------------------------------------------------------
 -- Ex 7: Validate a String that's either a Bool or an Int. The return
@@ -139,8 +155,12 @@ twoPersons name1 age1 employed1 name2 age2 employed2 = todo
 --  boolOrInt "13.2"    ==> Errors ["Not a Bool","Not an Int"]
 --  boolOrInt "Falseb"  ==> Errors ["Not a Bool","Not an Int"]
 
+-- THIS FAILS WITH INPUT "0x1" WHICH IS INTERPERETED AS INT 1 BY HASKELL
+-- SAME WITH OTHER REPRISENTATIONS LIKE 0o2 FOR OCT
 boolOrInt :: String -> Validation (Either Bool Int)
-boolOrInt = todo
+boolOrInt s = isBool s <|> isInt s
+  where isInt  = maybe (invalid "Not an Int") (pure . Right) . readMaybe
+        isBool = maybe (invalid "Not a Bool") (pure . Left)  . readMaybe
 
 ------------------------------------------------------------------------------
 -- Ex 8: Improved phone number validation. Implement the function
@@ -164,7 +184,11 @@ boolOrInt = todo
 --    ==> Errors ["Too long"]
 
 normalizePhone :: String -> Validation String
-normalizePhone = todo
+normalizePhone xs = lengthCheck trimmed *> charCheck trimmed
+  where lengthCheck s' = check (length s' <= 10) "Too long" s'
+        charCheck = traverse (\x -> check (isDigit x) (getError x) x)
+        getError s = "Invalid character: " ++ [s]
+        trimmed = filter (/= ' ') xs
 
 ------------------------------------------------------------------------------
 -- Ex 9: Parsing expressions. The Expression type describes an
@@ -208,7 +232,21 @@ data Expression = Plus Arg Arg | Minus Arg Arg
   deriving (Show, Eq)
 
 parseExpression :: String -> Validation Expression
-parseExpression = todo
+parseExpression ss = if length raw /= 3 
+  then invalid $ "Invalid expression: " ++ ss
+  else parseOp raw <*> parseArg1 raw <*> parseArg2 raw
+  where raw = words ss
+        parseArg1 [x, _, _] = validateNum x <|> validateVar x
+        parseArg2 [_, _, z] = validateNum z <|> validateVar z
+        validateNum a = check (all isDigit a) ("Invalid number: " ++ a) 
+          (Number (read a))
+        validateVar b = check (all isAlpha b && length b == 1) 
+          ("Invalid variable: " ++ b) (Variable $ head b)
+        parseOp [_, y, _] | '+' `elem` y = pure Plus
+                          | '-' `elem` y = pure Minus
+                          | otherwise = invalid $ "Unknown operator: " ++ y
+-- Note: above solution passes tests but is so ugly there is bound to be a better
+-- solution but I just can't see what it could be.
 
 ------------------------------------------------------------------------------
 -- Ex 10: The Priced T type tracks a value of type T, and a price
@@ -233,11 +271,11 @@ data Priced a = Priced Int a
   deriving (Show, Eq)
 
 instance Functor Priced where
-  fmap = todo
+  fmap f (Priced i a) = Priced i (f a)
 
 instance Applicative Priced where
-  pure = todo
-  liftA2 = todo
+  pure a = Priced 0 a
+  liftA2 f (Priced i1 a1) (Priced i2 a2) = Priced (i1 + i2) (f a1 a2)
 
 ------------------------------------------------------------------------------
 -- Ex 11: This and the next exercise will use a copy of the
@@ -270,7 +308,7 @@ instance MyApplicative [] where
   myLiftA2 = liftA2
 
 (<#>) :: MyApplicative f => f (a -> b) -> f a -> f b
-f <#> x = todo
+f <#> x = myLiftA2 id f x
 
 ------------------------------------------------------------------------------
 -- Ex 12: Reimplement fmap using liftA2 and pure. In practical terms,
@@ -287,7 +325,7 @@ f <#> x = todo
 --  myFmap negate [1,2,3]  ==> [-1,-2,-3]
 
 myFmap :: MyApplicative f => (a -> b) -> f a -> f b
-myFmap = todo
+myFmap f' aa = myPure f' <#> aa
 
 ------------------------------------------------------------------------------
 -- Ex 13: Given a function that returns an Alternative value, and a
@@ -314,7 +352,8 @@ myFmap = todo
 --       ==> Errors ["zero","zero","zero"]
 
 tryAll :: Alternative f => (a -> f b) -> [a] -> f b
-tryAll = todo
+tryAll f = foldr ((<|>) . f) empty
+-- could also use recursion solution to run through [a]
 
 ------------------------------------------------------------------------------
 -- Ex 14: Here's the type `Both` that expresses the composition of
@@ -339,7 +378,7 @@ newtype Both f g a = Both (f (g a))
   deriving Show
 
 instance (Functor f, Functor g) => Functor (Both f g) where
-  fmap = todo
+  fmap q (Both t) = Both $ (fmap . fmap) q t
 
 ------------------------------------------------------------------------------
 -- Ex 15: The composition of two Applicatives is also an Applicative!
@@ -367,5 +406,5 @@ instance (Functor f, Functor g) => Functor (Both f g) where
 --              Errors ["fail 1","fail 2"]]
 
 instance (Applicative f, Applicative g) => Applicative (Both f g) where
-  pure = todo
-  liftA2 = todo
+  pure = Both <$> (pure . pure)
+  liftA2 f (Both aa) (Both bb) = Both (liftA2 (liftA2 f) aa bb)
