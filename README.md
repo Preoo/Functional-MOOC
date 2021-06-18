@@ -4,6 +4,9 @@ This repo contains files created and used while author tries/tried to learn some
 
 GHC and other dev tooling are contained in Docker image created by Dockerfile,
 located in this dir and are to be used with VS Code Dev Container extension.
+Minimal Dockerfile definition:
+
+    FROM Haskell
 
 Usage and workflow:
 
